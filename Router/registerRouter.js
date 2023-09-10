@@ -3,11 +3,17 @@ const express = require('express');
 const registerSchema = require('../Schema/registerRouterSchema');
 const user = mongoose.model("user", registerSchema);
 const router = express.Router();
+const md5 = require('md5')
+
+
 
 router.post('/register', async (req, res) => {
-    const information = req.body;
+    
     try {
-        const addUser = new user(information); // Create a new instance of the register model
+        const addUser = new user({
+            email:req.body.email,
+            password:md5(req.body.password)
+        }); // Create a new instance of the register model
         const savedUser = await addUser.save(); // Save the new user to the database
         res.status(201).json(savedUser);
     } catch (error) {
@@ -18,10 +24,11 @@ router.post('/register', async (req, res) => {
 });
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const email = req.body.email 
+        const password = md5(req.body.password) 
         const users = await user.findOne({ email: email });
 
-        if (users && users.password === password) {
+        if (users && password === password) {
             res.status(200).json({ user: "authenticated user" });
         } else {
             res.status(404).json({ user: "email or password did not match" });

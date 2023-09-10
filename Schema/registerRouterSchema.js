@@ -1,7 +1,7 @@
 const mongoose  = require('mongoose')
-const encrypt = require ('mongoose-encryption')
 
-const registerSchema = new mongoose.Schema({
+
+const registerSchema = mongoose.Schema({
     email:{
         type:String,
         required:true
@@ -16,6 +16,5 @@ const registerSchema = new mongoose.Schema({
     }
 })
 
-const encKey = process.env.ENCKEY;
-registerSchema.plugin(encrypt, { secret: encKey,  encryptedFields: ['password'] });
+
 module.exports = registerSchema
