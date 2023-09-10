@@ -3,19 +3,20 @@ const express = require('express');
 const registerSchema = require('../Schema/registerRouterSchema');
 const user = mongoose.model("user", registerSchema);
 const router = express.Router();
-const md5 = require('md5')
-
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 
 router.post('/register', async (req, res) => {
-    
     try {
-        const addUser = new user({
-            email:req.body.email,
-            password:md5(req.body.password)
-        }); // Create a new instance of the register model
-        const savedUser = await addUser.save(); // Save the new user to the database
-        res.status(201).json(savedUser);
+        bcrypt.hash(req.body.password, saltRounds,async function (err, hash) {
+             const newUser = new user({
+                email: req.body.email,
+                password: hash
+            })
+            await newUser.save()
+            res.status(201).json(newUser);
+        });
     } catch (error) {
         res.status(500).json({
             error: error.message
@@ -24,21 +25,27 @@ router.post('/register', async (req, res) => {
 });
 router.post('/login', async (req, res) => {
     try {
-        const email = req.body.email 
-        const password = md5(req.body.password) 
-        const users = await user.findOne({ email: email });
+        const { email, password } = req.body;
+        const userRecord = await user.findOne({ email: email });
 
-        if (users && password === password) {
-            res.status(200).json({ user: "authenticated user" });
+        if (!userRecord) {
+            
+            return res.status(404).json({ error: "Email or password did not match" });
+        }
+        const passwordMatch = await bcrypt.compare(password, userRecord.password);
+
+        if (passwordMatch) {
+            return res.status(200).json({ message: "Authenticated user" });
         } else {
-            res.status(404).json({ user: "email or password did not match" });
+            return res.status(401).json({ error: "Email or password did not match" });
         }
     } catch (error) {
-        res.status(500).json({
-            error: error.message
-        });
+        return res.status(500).json({ error: error.message });
     }
 });
 
+
 module.exports = router;
+
+
 
